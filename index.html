@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        .grid {
+            display: grid;
+            height: 100vh;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+        .item {
+            border: 15px solid rgba(0,0,0,.2);
+        }
+        .top {
+            grid-column: 1;
+            grid-row: 1;
+            background-color: darkslategrey;
+        }
+        .bottom {
+            grid-column: 1;
+            grid-row: 2;
+            background-color: navajowhite;
+        }
+        .right {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            background-color: rebeccapurple;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid js-grid">
+        <div class="item top js-grid__item">
+            <p>TOP</p>
+        </div>
+        <div class="item bottom js-grid__item">
+            <p>BOTTOM</p>
+        </div>
+        <div class="item right js-grid__item">
+            <p>RIGHT</p>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(() => {
+            const $grid = $('.js-grid');
+
+            $grid.on('mousedown', '.js-grid__item', initResize);
+
+            function initResize(event) {
+                const triggeredBorder = getTriggeredBorder(event);
+
+                if (!shouldResize(triggeredBorder)) return false;
+
+                const resizeWithOptions = resize.bind(this, triggeredBorder);
+
+                $(window)
+                    .on('mousemove', resizeWithOptions)
+                    .on('mouseup', stopResize)
+            }
+
+            function resize(triggeredBorder, event) {
+                const { target, clientY } = event;
+                const gridStyles = window.getComputedStyle(target.parentElement);
+                const elementStyles = window.getComputedStyle(target);
+                const templateRows = gridStyles.gridTemplateRows.split(' ');
+                const { gridColumnStart, gridColumnEnd, gridRowStart, gridRowEnd } = formatGridCSS(elementStyles);
+
+                templateRows[gridRowStart - 1] = clientY - target.offsetHeight;
+                templateRows[gridRowStart - 1] = clientY - target.offsetHeight;
+
+                // for (let i = gridRowStart; i < gridRowEnd; i++) {
+                //     templateRows[i - 1] = clientY - target;
+                // }
+
+                render();
+            }
+
+            function stopResize(e) {
+                $(window)
+                    .off('mousemove', resize)
+                    .off('mouseup', stopResize)
+            }
+
+            function shouldResize(triggeredBorder) {
+                return triggeredBorder.x || triggeredBorder.y;
+            }
+
+            function formatGridCSS(styles) {
+                let { gridColumnStart, gridColumnEnd, gridRowStart, gridRowEnd } = styles;
+
+                const format = (start, end) => end === 'auto' ? start + 1 : end;
+
+                return {
+                    gridColumnStart,
+                    gridColumnEnd: format(gridColumnStart, gridColumnEnd),
+                    gridRowStart,
+                    gridRowEnd: format(gridRowStart, gridRowEnd)
+                }
+            }
+
+            function getTriggeredBorder(event) {
+                const { target, clientX, clientY } = event;
+
+                let x, y;
+
+                if (inRange(target.offsetLeft, clientX)) {
+                    x = 'ColumnStart';
+                }
+
+                if (inRange(target.offsetLeft + target.offsetWidth, clientX)) {
+                    x = 'ColumnEnd';
+                }
+
+                if (inRange(target.offsetTop, clientY)) {
+                    y = 'RowStart';
+                }
+
+                if (inRange(target.offsetTop + target.offsetHeight, clientY)) {
+                    y = 'RowEnd';
+                }
+
+                return { x, y }
+            }
+
+            function inRange(actual, target, range = 15) {
+                return actual < target + range && actual > target - range;
+            }
+
+            function render(templateRows, templateColumns) {
+
+            }
+        });
+    </script>
+</body>
+</html>
