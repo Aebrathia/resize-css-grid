@@ -17,8 +17,8 @@
         .grid {
             display: grid;
             height: 100vh;
-            grid-template-columns: 2fr 1fr;
-            grid-template-rows: 1fr 1fr;
+            grid-template-columns: 2fr 1fr 2fr;
+            grid-template-rows: 1fr 1fr 2fr;
         }
         .item {
             border: 15px solid rgba(0,0,0,.2);
@@ -28,14 +28,24 @@
             grid-row: 1;
             background-color: darkslategrey;
         }
-        .bottom {
+        .middle-left {
             grid-column: 1;
             grid-row: 2;
+            background-color: lavender;
+        }
+        .middle-right {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            background-color: light-blue;
+        }
+        .bottom {
+            grid-column: 1 / 4;
+            grid-row: 3;
             background-color: navajowhite;
         }
         .right {
-            grid-column: 2;
-            grid-row: 1 / 3;
+            grid-column: 3;
+            grid-row: 1 / 4;
             background-color: rebeccapurple;
         }
     </style>
@@ -45,6 +55,12 @@
         <div class="item top js-grid__item">
             <p>TOP</p>
         </div>
+        <div class="item middle-left js-grid__item">
+            <p>MIDDLE LEFT</p>
+        </div>
+        <div class="item middle-right js-grid__item">
+            <p>MIDDLE RIGHT</p>
+        </div>
         <div class="item bottom js-grid__item">
             <p>BOTTOM</p>
         </div>
@@ -52,7 +68,7 @@
             <p>RIGHT</p>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="./node_modules/jquery/dist/jquery.min.js"></script>
     <script>
         $(document).ready(() => {
             const $grid = $('.js-grid');
@@ -81,22 +97,26 @@
                 return (event) => {
                     const { clientX, clientY } = event;
 
-                    const pxToFr = context => value => parseInt(value.replace('px', ''), 10) / context;
+                    const stripUnit = value => typeof value === 'string' ? parseInt(value.substring(0, value.length - 2), 10) : value;
+                    const pxToFr = context => value => (stripUnit(value) / context) + 'fr';
 
                     if (triggeredBorder.row) {
+                        const pxToFrWithContext = pxToFr(grid.offsetHeight);
                         // Update size
-                        templateRows[elementStyles['grid' + triggeredBorder.row] - 1] = clientY - target.offsetHeight + 'px';
+                        const targetRow = elementStyles['grid' + triggeredBorder.row] - 1;
+                        const templateRowsToFr = templateRows.map(pxToFrWithContext);
+                        templateRowsToFr[targetRow] = pxToFrWithContext(stripUnit(templateRows[targetRow]) + clientY - target.offsetTop);
 
                         // Render formatted to fr unit
-                        grid.style.gridTemplateRows = templateRows.map(pxToFr(grid.offsetHeight)).join(' ');
+                        grid.style.gridTemplateRows = templateRowsToFr.join(' ');
                     }
 
                     if (triggeredBorder.column) {
                         // Update size
-                        templateColumns[elementStyles['grid' + triggeredBorder.column] - 1] = clientX - target.offsetWidth + 'px';
+                        templateColumns[elementStyles['grid' + triggeredBorder.column] - 1] = clientX + 'px';
 
                         // Render formatted to fr unit
-                        grid.style.gridTemplateColumns = templateRows.map(pxToFr(grid.offsetWidth)).join(' ');
+                        grid.style.gridTemplateColumns = templateColumns.map(pxToFr(grid.offsetWidth)).join(' ');
                     }
                 }
             }
@@ -116,12 +136,12 @@
             function formatGridCSS(styles) {
                 let { gridColumnStart, gridColumnEnd, gridRowStart, gridRowEnd } = styles;
 
-                const format = (start, end) => end === 'auto' ? start + 1 : end;
+                const format = (start, end) => end === 'auto' ? parseInt(start, 10) + 1 : end;
 
                 return {
-                    gridColumnStart,
+                    gridColumnStart: parseInt(gridColumnStart, 10),
                     gridColumnEnd: format(gridColumnStart, gridColumnEnd),
-                    gridRowStart,
+                    gridRowStart: parseInt(gridRowStart, 10),
                     gridRowEnd: format(gridRowStart, gridRowEnd)
                 }
             }
